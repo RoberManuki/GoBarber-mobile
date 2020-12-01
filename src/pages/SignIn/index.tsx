@@ -1,10 +1,12 @@
 import React, { useCallback, useRef } from 'react';
-import { Image, KeyboardAvoidingView, Platform, View, ScrollView } from 'react-native';
+import { Image, KeyboardAvoidingView, Platform, View, ScrollView, TextInput, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import logoImg from '../../assets/logo.png';
 import Icon from 'react-native-vector-icons/Feather';
 import { Form } from '@unform/mobile';
 import { FormHandles } from '@unform/core';
+import * as Yup from 'yup';
+import getValidationErrors from '../../utils/getValidationErrors';
 
 
 import Input from '../../components/Input';
@@ -12,13 +14,53 @@ import Button from '../../components/Button';
 
 import {Container, Title, ForgotPassword, CreateAccountButton, ForgotPasswordText, CreateAccountButtonText } from './styles'
 
+interface SignInCredentials {
+  email: string;
+  password: string;
+}
+
 const SignIn: React.FunctionComponent = () => {
   const navigation = useNavigation();
+  const passwordInputRef = useRef<TextInput>(null);
   const formRef = useRef<FormHandles>(null);
 
-  const handleSignIn = useCallback((data: object) => {
-    console.log(data);
-  }, [])
+  const handleSignIn = useCallback(
+    async (data: SignInCredentials) => {
+      try {
+        formRef.current?.setErrors({});
+
+        const schema = Yup.object().shape({
+          email: Yup.string()
+            .required('Email obrigatório!')
+            .email('Digite um email válido!'),
+          password: Yup.string().required('Digite a senha!'),
+        });
+
+        await schema.validate(data, { abortEarly: false });
+
+        // await signIn({
+        //   email: data.email,
+        //   password: data.password,
+        // });
+
+        // history.push('/dashboard');
+      } catch (err) {
+        if (err instanceof Yup.ValidationError) {
+          const errors = getValidationErrors(err);
+          formRef.current?.setErrors(errors);
+
+          return;
+        }
+
+        Alert.alert(
+          'Authentication error',
+          'Invalid credentials',
+        );
+      }
+    },
+    [],
+  );
+
 
   return (
     <>
@@ -39,8 +81,30 @@ const SignIn: React.FunctionComponent = () => {
             </View>
 
             <Form ref={formRef} onSubmit={handleSignIn}>
-              <Input name="email" icon="mail" placeholder="Email"/>
-              <Input name="password" icon="lock" placeholder="Senha"/>
+              <Input
+                autoCorrect={false}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                name="email"
+                icon="mail"
+                placeholder="Email"
+                returnKeyType="next"
+                onSubmitEditing={() => {
+                  passwordInputRef.current?.focus();
+                }}
+              />
+
+              <Input
+                ref={passwordInputRef}
+                name="password"
+                icon="lock"
+                placeholder="Senha"
+                secureTextEntry
+                returnKeyType="send"
+                onSubmitEditing={() => {
+                  formRef.current?.submitForm();
+                }}
+              />
 
               <Button
                 onPress={() => {
