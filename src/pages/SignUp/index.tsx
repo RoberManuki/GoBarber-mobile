@@ -6,6 +6,7 @@ import Icon from 'react-native-vector-icons/Feather';
 import { Form } from '@unform/mobile';
 import { FormHandles } from '@unform/core';
 import * as Yup from 'yup';
+import api from '../../services/api';
 import getValidationErrors from '../../utils/getValidationErrors';
 
 
@@ -42,9 +43,14 @@ const SignUp: React.FunctionComponent = () => {
 
         await schema.validate(data, { abortEarly: false });
 
-        // await api.post('/users', data);
+        await api.post('/users', data);
 
-        // history.push('/');
+        Alert.alert(
+          'Register sucessfull!',
+          'You can now login into your account.',
+        );
+
+        navigation.goBack();
       } catch (err) {
         if (err instanceof Yup.ValidationError) {
           const errors = getValidationErrors(err);
@@ -58,7 +64,7 @@ const SignUp: React.FunctionComponent = () => {
         );
       }
     },
-    [],
+    [navigation],
   );
 
 
